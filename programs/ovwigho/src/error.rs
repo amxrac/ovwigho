@@ -6,4 +6,6 @@ pub enum ErrorCode {
     CollectionAlreadyInitialized,
     #[msg("The collection has not been initialized.")]
     CollectionNotInitialized,
+    #[msg("The asset has already been initialized.")]
+    AssetAlreadyInitialized,
 }

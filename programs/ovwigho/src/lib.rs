@@ -12,7 +12,7 @@ pub use constants::*;
 pub use instructions::*;
 pub use state::*;
 
-declare_id!("87SMpWyhZpRWKeRxaMNMwwjDwMBLhYLSAbPjkPJMRdii");
+declare_id!("Gf44xpXRCeZAy4kWYDLrsVDAGQhvKC3Y5DqtJBeojzZ4");
 
 #[program]
 pub mod ovwigho {
@@ -37,5 +37,9 @@ pub mod ovwigho {
         symbol: String,
     ) -> Result<()> {
         instructions::mint_cnft::handler(ctx, name, uri, symbol)
+    }
+
+    pub fn mint_nft(ctx: Context<MintNFT>, name: String, uri: String) -> Result<()> {
+        instructions::mint_nft::handler(ctx, name, uri)
     }
 }

@@ -91,10 +91,17 @@ impl<'info> MintcNFT<'info> {
 
         Ok(())
     }
+
+    pub fn record_mint(&mut self) -> Result<()> {
+        self.config.total_cnfts_minted += 1;
+
+        Ok(())
+    }
 }
 
 pub fn handler(ctx: Context<MintcNFT>, name: String, uri: String, symbol: String) -> Result<()> {
     ctx.accounts.mint_cnft(name, uri, symbol)?;
 
+    ctx.accounts.record_mint()?;
     Ok(())
 }

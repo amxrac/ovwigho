@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-ovwigho = "87SMpWyhZpRWKeRxaMNMwwjDwMBLhYLSAbPjkPJMRdii"
+ovwigho = "Gf44xpXRCeZAy4kWYDLrsVDAGQhvKC3Y5DqtJBeojzZ4"
 
 [registry]
 url = "https://api.apr.dev"
