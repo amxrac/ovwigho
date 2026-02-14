@@ -1,7 +1,5 @@
 use anchor_lang::prelude::*;
 
-use crate::constants::ANCHOR_DESCRIMINATOR_SIZE;
-
 #[account]
 #[derive(InitSpace)]
 pub struct Config {

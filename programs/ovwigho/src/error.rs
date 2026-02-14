@@ -8,4 +8,6 @@ pub enum ErrorCode {
     CollectionNotInitialized,
     #[msg("The asset has already been initialized.")]
     AssetAlreadyInitialized,
+    #[msg("Not enough cNFTs burned")]
+    NotEnoughBurns,
 }

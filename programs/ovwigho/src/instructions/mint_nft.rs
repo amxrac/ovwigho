@@ -5,7 +5,7 @@ use mpl_core::{
     ID as CORE_PROGRAM_ID,
 };
 
-use crate::{error::ErrorCode, Config};
+use crate::{error::ErrorCode, Config, PlayerProgress};
 
 #[derive(Accounts)]
 pub struct MintNFT<'info> {
@@ -20,6 +20,15 @@ pub struct MintNFT<'info> {
         bump = config.bump,
     )]
     pub config: Box<Account<'info, Config>>,
+
+    #[account(
+        mut,
+        seeds = [b"player", player.key().as_ref()],
+        bump = player_progress.bump,
+        constraint = player_progress.total_cnfts_burned == 5 @ ErrorCode::NotEnoughBurns
+
+    )]
+    pub player_progress: Box<Account<'info, PlayerProgress>>,
 
     /// CHECK: Collection Account that will be checked by core
     #[account(
@@ -87,6 +96,8 @@ impl<'info> MintNFT<'info> {
     pub fn record_mint(&mut self) -> Result<()> {
         self.config.total_nfts_minted += 1;
 
+        self.player_progress.total_cnfts_burned = 0;
+        self.player_progress.total_nfts_minted += 1;
         Ok(())
     }
 }
