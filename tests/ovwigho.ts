@@ -32,6 +32,7 @@ describe("ovwigho", () => {
   const CnftCollection = Keypair.generate();
   const nftCollection = Keypair.generate();
   const emptyMerkleTree = Keypair.generate();
+  const playerOne = Keypair.generate();
 
   let configPda: PublicKey;
   let treeConfigPda: PublicKey;
@@ -47,66 +48,129 @@ describe("ovwigho", () => {
     })[0];
 
     treeConfigPda = new PublicKey(treeConfig);
+
+    const playerOneBalance = await provider.connection.getBalance(
+      playerOne.publicKey
+    );
+    if (playerOneBalance < 1_000_000_000) {
+      const tx = new anchor.web3.Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: authority.publicKey,
+          toPubkey: playerOne.publicKey,
+          lamports: 0.1 * anchor.web3.LAMPORTS_PER_SOL,
+        })
+      );
+      await provider.sendAndConfirm(tx);
+    }
   });
 
-  describe("Initialize Config", () => {
-    it("initializes the config", async () => {
-      const maxDepth = 14;
-      const maxBufferSize = 64;
-      const canopyDepth = maxDepth - 5;
+  // describe("Initialize Config, Create NFT & cNFT Collections", () => {
+  //   it("initializes the config", async () => {
+  //     const maxDepth = 14;
+  //     const maxBufferSize = 64;
+  //     const canopyDepth = maxDepth - 5;
 
-      const requiredTreeSpace = getConcurrentMerkleTreeAccountSize(
-        maxDepth,
-        maxBufferSize,
-        canopyDepth ?? 0
+  //     const requiredTreeSpace = getConcurrentMerkleTreeAccountSize(
+  //       maxDepth,
+  //       maxBufferSize,
+  //       canopyDepth ?? 0
+  //     );
+
+  //     let allocTreeIx = SystemProgram.createAccount({
+  //       fromPubkey: provider.wallet.publicKey,
+  //       lamports: await provider.connection.getMinimumBalanceForRentExemption(
+  //         requiredTreeSpace
+  //       ),
+  //       newAccountPubkey: emptyMerkleTree.publicKey,
+  //       programId: MPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
+  //       space: requiredTreeSpace,
+  //     });
+
+  //     const sig = await sendAndConfirmTransaction(
+  //       provider.connection,
+  //       new Transaction().add(allocTreeIx),
+  //       [wallet.payer, emptyMerkleTree]
+  //     );
+
+  //     console.log("allocated merkle tree signature: ", sig);
+
+  //     try {
+  //       const sig = await program.methods
+  //         .initialize(
+  //           14,
+  //           64,
+  //           {
+  //             name: "test cNFT",
+  //             uri: "https://raw.githubusercontent.com/amxrac/cmd-token/refs/heads/main/cnft%20metadata.json",
+  //           },
+  //           {
+  //             name: "test NFT",
+  //             uri: "https://raw.githubusercontent.com/amxrac/cmd-token/refs/heads/main/nft%20metadata.json",
+  //           }
+  //         )
+  //         .accounts({
+  //           authority: wallet.publicKey,
+  //           cnftCollection: CnftCollection.publicKey,
+  //           nftCollection: nftCollection.publicKey,
+  //           treeConfig: treeConfigPda,
+  //           merkleTree: emptyMerkleTree.publicKey,
+  //         })
+  //         .signers([CnftCollection, nftCollection])
+  //         .rpc();
+
+  //       console.log("config account created");
+  //       console.log("merkle tree initialized");
+  //       console.log("cnft collection created");
+  //       console.log("nft collection created");
+  //       console.log("transaction signature", sig);
+  //     } catch (error: any) {
+  //       console.error(`something went wrong: ${error}`);
+  //       if (error.logs && Array.isArray(error.logs)) {
+  //         console.log("Transaction Logs:");
+  //         error.logs.forEach((log: string) => console.log(log));
+  //       } else {
+  //         console.log("No logs available in the error.");
+  //       }
+  //       throw error;
+  //     }
+  //   });
+  // });
+
+  describe("Mint cNFT", () => {
+    it("mints a cnft", async () => {
+      let mplCoreCpiSignerKey = new PublicKey(
+        "CbNY3JiXdXNE9tPNEk1aRZVEkWdj2v7kfJLNQwZZgpXk"
       );
+      let configAccount = await program.account.config.fetch(configPda);
+      let initializedCnftCollection = configAccount.cnftCollection;
+      let initializedMerkleTree = configAccount.merkleTree;
+      // let initializedTreeConfig = configAccount.tre
 
-      let allocTreeIx = SystemProgram.createAccount({
-        fromPubkey: provider.wallet.publicKey,
-        lamports: await provider.connection.getMinimumBalanceForRentExemption(
-          requiredTreeSpace
-        ),
-        newAccountPubkey: emptyMerkleTree.publicKey,
-        programId: MPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
-        space: requiredTreeSpace,
-      });
+      let treeConfig = findTreeConfigPda(umi, {
+        merkleTree: publicKey(initializedMerkleTree),
+      })[0];
 
-      const sig = await sendAndConfirmTransaction(
-        provider.connection,
-        new Transaction().add(allocTreeIx),
-        [wallet.payer, emptyMerkleTree]
-      );
-
-      console.log("allocated merkle tree signature: ", sig);
+      treeConfigPda = new PublicKey(treeConfig);
 
       try {
         const sig = await program.methods
-          .initialize(
-            14,
-            64,
-            {
-              name: "test cNFT",
-              uri: "https://raw.githubusercontent.com/amxrac/cmd-token/refs/heads/main/cnft%20metadata.json",
-            },
-            {
-              name: "test NFT",
-              uri: "https://raw.githubusercontent.com/amxrac/cmd-token/refs/heads/main/nft%20metadata.json",
-            }
+          .mintCnft(
+            "sample cnft",
+            "https://raw.githubusercontent.com/amxrac/cmd-token/refs/heads/main/cnft%20metadata.json",
+            "SMPL"
           )
           .accounts({
+            player: playerOne.publicKey,
             authority: wallet.publicKey,
-            cnftCollection: CnftCollection.publicKey,
-            nftCollection: nftCollection.publicKey,
+            cnftCollection: initializedCnftCollection,
             treeConfig: treeConfigPda,
-            merkleTree: emptyMerkleTree.publicKey,
+            merkleTree: initializedMerkleTree,
+            mplCoreCpiSigner: mplCoreCpiSignerKey,
           })
-          .signers([CnftCollection, nftCollection])
+          .signers([playerOne])
           .rpc();
 
-        console.log("config account created");
-        console.log("merkle tree initialized");
-        console.log("cnft collection created");
-        console.log("nft collection created");
+        console.log("cnft minted");
         console.log("transaction signature", sig);
       } catch (error: any) {
         console.error(`something went wrong: ${error}`);
@@ -119,9 +183,5 @@ describe("ovwigho", () => {
         throw error;
       }
     });
-  });
-
-  describe("Mint cNFT", () => {
-    it("mints a cnft", async () => {});
   });
 });
