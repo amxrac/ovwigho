@@ -30,6 +30,7 @@ import {
 } from "@metaplex-foundation/digital-asset-standard-api";
 import { testPlugins } from "@metaplex-foundation/umi-bundle-tests";
 import testKeys from "../test_keys.json";
+import { MPL_CORE_PROGRAM_ID } from "@metaplex-foundation/mpl-core";
 
 describe("ovwigho", () => {
   // Configure the client to use the local cluster.
@@ -51,6 +52,7 @@ describe("ovwigho", () => {
   const emptyMerkleTree = Keypair.generate();
   const playerOne = Keypair.fromSecretKey(Uint8Array.from(testKeys.playerOne));
   const playerTwo = Keypair.fromSecretKey(Uint8Array.from(testKeys.playerTwo));
+  const asset = Keypair.fromSecretKey(Uint8Array.from(testKeys.asset));
 
   let configPda: PublicKey;
   let treeConfigPda: PublicKey;
@@ -513,5 +515,40 @@ describe("ovwigho", () => {
     //     throw error;
     //   }
     // });
+  });
+
+  describe("Mint NFT", () => {
+    it("mints an NFT", async () => {
+      let configAccount = await program.account.config.fetch(configPda);
+      let initializedNftCollection = configAccount.nftCollection;
+      try {
+        const sig = await program.methods
+          .mintNft(
+            "sample nft",
+            "https://raw.githubusercontent.com/amxrac/cmd-token/refs/heads/main/nft%20metadata.json"
+          )
+          .accounts({
+            player: playerOne.publicKey,
+            authority: wallet.publicKey,
+            nftCollection: initializedNftCollection,
+            asset: asset.publicKey,
+            coreProgram: MPL_CORE_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
+          })
+          .signers([playerOne, asset])
+          .rpc();
+        console.log("nft minted");
+        console.log("transaction signature", sig);
+      } catch (error: any) {
+        console.error(`something went wrong: ${error}`);
+        if (error.logs && Array.isArray(error.logs)) {
+          console.log("Transaction Logs:");
+          error.logs.forEach((log: string) => console.log(log));
+        } else {
+          console.log("No logs available in the error.");
+        }
+        throw error;
+      }
+    });
   });
 });
