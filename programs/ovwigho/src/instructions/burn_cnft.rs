@@ -111,7 +111,8 @@ impl<'info> BurncNFT<'info> {
 
         builder
             .tree_config(tree_config)
-            .authority(Some(authority))
+            .payer(player)
+            .authority(Some(player))
             .leaf_owner(player)
             .leaf_delegate(Some(player))
             .merkle_tree(merkle_tree)
